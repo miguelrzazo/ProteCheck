@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ProteCheck</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script type="module" src="/main.js" defer></script>
+</head>
+<body>
+    <div id="app" class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">▣</span>
+                <div class="logo-text">
+                    <span class="logo-prompt">SAMUR·PC &gt;</span>
+                    <h1>ProteCheck</h1>
+                    <span id="app-version" class="app-version"></span>
+                </div>
+                <span class="cursor-blink">▋</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <div class="manual-wrap">
+                    <button id="btn-manual" class="btn secondary manual-btn">Manual ▾</button>
+                    <div id="manual-menu" class="manual-menu hidden">
+                        <div class="manual-menu-header">// manual</div>
+                        <div class="manual-coming-soon">
+                            Manual de usuario <span class="wip-tag">coming soon</span>
+                        </div>
+                        <div class="manual-divider"></div>
+                        <a id="manual-contact" href="mailto:mrosaz00@estudiantes.unileon.es" class="manual-link">
+                            <span class="manual-link-icon">✉</span> Contacto
+                        </a>
+                        <a id="manual-github" href="https://github.com" class="manual-link">
+                            <span class="manual-link-icon">⌥</span> GitHub
+                        </a>
+                    </div>
+                </div>
+                <button id="btn-theme-toggle" class="btn theme-toggle" title="Modo oscuro">🌙</button>
+                <button id="btn-refresh" class="btn secondary hidden" title="Refrescar carpeta">🔄</button>
+                <button id="btn-select-folder" class="btn primary">📁 Seleccionar Carpeta</button>
+            </div>
+        </header>
+
+        <!-- Loader -->
+        <div id="loader" class="loader-container hidden">
+            <div class="spinner"></div>
+            <p>Procesando archivos...</p>
+        </div>
+
+        <!-- Dashboard -->
+        <main id="dashboard" class="dashboard hidden">
+
+            <!-- Filters -->
+            <section class="filters-container">
+                <div class="filters">
+                    <span class="filter-label">// ESTADO:</span>
+                    <button class="btn filter-btn estado-btn active" data-filter="todo">TODOS</button>
+                    <button class="btn filter-btn estado-btn" data-filter="aptos">APTOS</button>
+                    <button class="btn filter-btn estado-btn" data-filter="alerta">ALERTA/PELIGRO</button>
+                    <button class="btn filter-btn estado-btn" data-filter="rcp">FALLA RCP</button>
+                </div>
+                <div class="filters">
+                    <span class="filter-label">// HORAS:</span>
+                    <button class="btn filter-btn horas-btn active" data-mode="firmadas">FIRMADAS</button>
+                    <button class="btn filter-btn horas-btn" data-mode="programadas">PROGRAMADAS</button>
+                </div>
+                <div class="filters">
+                    <span class="filter-label">// PERIODO:</span>
+                    <button class="btn filter-btn time-btn active" data-filter="anoActual">AÑO ACTUAL</button>
+                    <button class="btn filter-btn time-btn" data-filter="ultimoAno">12M EXACTOS</button>
+                    <button class="btn filter-btn time-btn" data-filter="ultimoAnoVencido">12M VENCIDO</button>
+                    <span class="help-tooltip">
+                        <span class="help-icon">?</span>
+                        <span class="help-box">Cuenta desde el <b>día 1 del mes</b>, 12 meses atrás.<br>Ej: si hoy es 6/05/2026 → desde el <b>1/05/2025</b>.<br>«12M Exactos» contaría desde el 6/05/2025.</span>
+                    </span>
+                    <button class="btn filter-btn time-btn" data-filter="tresMeses">3 MESES</button>
+                </div>
+            </section>
+
+            <!-- Metrics Cards -->
+            <section class="metrics">
+                <div class="card metric">
+                    <h3>// VOLUNTARIOS</h3>
+                    <p id="metric-voluntarios" class="value">0</p>
+                </div>
+                <div class="card metric">
+                    <h3>// APTOS</h3>
+                    <p id="metric-aptos" class="value text-valid">0</p>
+                </div>
+                <div class="card metric">
+                    <h3>// ALERTA</h3>
+                    <p id="metric-alerta" class="value text-form">0</p>
+                </div>
+                <div class="card metric">
+                    <h3>// PELIGRO</h3>
+                    <p id="metric-peligro" class="value text-invalid">0</p>
+                </div>
+            </section>
+
+            <!-- Main Content Area -->
+            <section class="content-area full-width">
+                <div class="table-container card">
+                    <div class="table-header">
+                        <h3>Estado de Cumplimiento por Voluntario</h3>
+                    </div>
+                    <div class="table-wrapper">
+                        <table id="volunteers-table">
+                            <thead>
+                                <tr>
+                                    <th class="sortable" data-sort="nvol">NVOL</th>
+                                    <th class="sortable" data-sort="antiguedadYears">ANTIGÜEDAD</th>
+                                    <th class="sortable" data-sort="serviciosEnVentana">SERVICIOS</th>
+                                    <th class="sortable" data-sort="horasTotalesTimeWindow">H.TOT</th>
+                                    <th class="sortable" data-sort="horasValidasTimeWindow">HORAS PC</th>
+                                    <th class="sortable" data-sort="horasPsicosocial">H.PSICO</th>
+                                    <th class="sortable" data-sort="horasRetenPC">RETÉN PC</th>
+                                    <th>TRIMESTRAL</th>
+                                    <th>RCP/AIT</th>
+                                    <th>ESTADO</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Rows generated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Export Actions -->
+            <section class="export-actions">
+                <button id="btn-export-xlsx" class="btn secondary">📥 XLSX</button>
+                <button id="btn-export-csv" class="btn secondary">📥 CSV</button>
+                <button id="btn-export-pdf" class="btn secondary">📥 PDF</button>
+            </section>
+        </main>
+
+        <!-- Volunteer Detail Modal -->
+        <div id="volunteer-modal" class="modal hidden">
+            <div class="modal-content card">
+                <div class="modal-header">
+                    <button id="btn-close-modal" class="btn icon-btn">← VOLVER</button>
+                    <h2 id="modal-title">Voluntario</h2>
+                    <span id="modal-estado-badge" class="badge"></span>
+                    <label class="jefatura-toggle" style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" id="modal-jefatura-checkbox">
+                        <b>ES JEFATURA</b>
+                    </label>
+                </div>
+
+                <div id="modal-alert-box" class="alert-box"></div>
+
+                <div class="modal-metrics">
+                    <span class="badge">ANTIGÜEDAD: <b id="modal-antiguedad">0</b>a</span>
+                    <span class="badge">HORAS PC: <b id="modal-h-actual">0</b></span>
+                    <span class="badge">SIN SERVICIO: <b id="modal-dias">0</b>d</span>
+                </div>
+
+                <div class="table-wrapper">
+                    <table id="services-table">
+                        <thead>
+                            <tr>
+                                <th>FECHA</th>
+                                <th>CÓDIGO</th>
+                                <th>DENOMINACIÓN</th>
+                                <th>H.FIRM</th>
+                                <th>ACC</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Rows generated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Drop overlay -->
+        <div id="drop-overlay" class="drop-overlay hidden">
+            <div class="drop-overlay-inner">
+                <span class="drop-icon">⤓</span>
+                <p id="drop-message">Suelta el archivo XLS para añadir voluntario</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
