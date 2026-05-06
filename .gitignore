@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+
+# Data and Reports
+*.xls
+*.xlsx
+*.pdf
+*.jpeg
+*.jpg
+AGENTS.md

@@ -77,15 +77,15 @@ export function analyzeData(volunteers, estadoFilter, timeFilter, horasMode = 'f
 
                 let addsToHours = false;
                 if (!s.forceInvalid) {
-                    if (s.esValido || s.forceValid) {
-                        addsToHours = true;
-                    } else if (isOficina) {
+                    if (isOficina) {
                         if (vol.isJefatura) {
                             addsToHours = true;
                         } else if (!hasCountedOficinaInWindow) {
                             addsToHours = true;
                             hasCountedOficinaInWindow = true;
                         }
+                    } else if (s.esValido || s.forceValid) {
+                        addsToHours = true;
                     } else if (isEntrevista) {
                         addsToHours = true;
                     }
