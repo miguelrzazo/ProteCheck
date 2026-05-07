@@ -1,18 +1,14 @@
-import { open } from '@tauri-apps/plugin-dialog';
-import { writeFile } from '@tauri-apps/plugin-fs';
-import { join } from '@tauri-apps/api/path';
-import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { invoke } from '@tauri-apps/api/core';
 import { processFolder, parseVolunteerFile } from './modules/parser.js';
 import { analyzeData } from './modules/analyzer.js';
 import { renderDashboard, setupSortHeaders, applySorting, getSortInfo } from './modules/dashboard.js';
 import { exportToXLSX, exportToCSV, exportToPDF } from './modules/exporter.js';
+import { initOnboarding } from './modules/onboarding.js';
 
 let currentData = [];
 let currentEstadoFilter = 'todo';
 let currentTimeFilter = 'anoActual';
 let currentHorasMode = 'firmadas';
-let currentFolderPath = null;
+let currentDirectoryHandle = null;
 
 // ── Theme toggle ─────────────────────────────────────────
 const THEMES = ['dark', 'light', 'system'];
@@ -123,11 +119,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // Open external links via window.open so Tauri forwards them to the system browser
     document.getElementById('manual-contact').addEventListener('click', (e) => {
         e.preventDefault();
-        window.open('mailto:mrosaz00@estudiantes.unileon.es', '_blank');
+        window.open('mailto:mrz_coding_sol.figure210@passinbox.com', '_blank');
     });
     document.getElementById('manual-github').addEventListener('click', (e) => {
         e.preventDefault();
-        window.open('https://github.com', '_blank');
+        window.open('https://github.com/miguelrzazo/ProteCheck', '_blank');
+    });
+
+    // Manual modal
+    document.getElementById('manual-open').addEventListener('click', (e) => {
+        e.stopPropagation();
+        manualMenu.classList.add('hidden');
+        document.getElementById('manual-modal').classList.remove('hidden');
+    });
+    document.getElementById('manual-close').addEventListener('click', () => {
+        document.getElementById('manual-modal').classList.add('hidden');
+    });
+    document.getElementById('manual-modal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('manual-modal')) {
+            document.getElementById('manual-modal').classList.add('hidden');
+        }
     });
 
     // Data updates from UI
@@ -142,18 +153,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (raw) raw.isJefatura = e.detail.value;
         updateDashboard();
     });
+
+    // First-run onboarding
+    initOnboarding();
 });
 
 async function handleSelectFolder() {
     try {
-        const folderPath = await open({
-            directory: true,
-            multiple: false,
-            title: 'Selecciona la carpeta con los archivos Excel (.xls)'
+        const directoryHandle = await window.showDirectoryPicker({
+            mode: 'read'
         });
         
-        if (folderPath) {
-            currentFolderPath = folderPath;
+        if (directoryHandle) {
+            currentDirectoryHandle = directoryHandle;
             document.getElementById('btn-refresh').classList.remove('hidden');
             
             document.getElementById('dashboard').classList.add('hidden');
@@ -161,12 +173,12 @@ async function handleSelectFolder() {
             
             // Allow UI to update
             setTimeout(async () => {
-                currentData = await processFolder(folderPath);
+                currentData = await processFolder(directoryHandle);
                 
                 document.getElementById('loader').classList.add('hidden');
                 
                 if (currentData.length === 0) {
-                    alert('No se encontraron archivos .xls válidos en la carpeta seleccionada.');
+                    alert('No se encontraron archivos .xls o .xlsx válidos en la carpeta seleccionada.');
                     return;
                 }
                 
@@ -174,14 +186,16 @@ async function handleSelectFolder() {
             }, 100);
         }
     } catch(e) {
-        console.error(e);
-        alert('Error al seleccionar la carpeta.');
+        if (e.name !== 'AbortError') {
+            console.error(e);
+            alert('Error al seleccionar la carpeta. Asegúrate de usar un navegador compatible (Chrome/Edge/Opera).');
+        }
         document.getElementById('loader').classList.add('hidden');
     }
 }
 
 async function handleRefresh() {
-    if (!currentFolderPath) return;
+    if (!currentDirectoryHandle) return;
     
     // Guardar estados manuales actuales
     const manualStates = currentData.map(v => ({
@@ -194,7 +208,7 @@ async function handleRefresh() {
     
     try {
         // Volver a procesar la carpeta
-        const newData = await processFolder(currentFolderPath);
+        const newData = await processFolder(currentDirectoryHandle);
         
         // Re-aplicar estados manuales
         newData.forEach(v => {
@@ -259,11 +273,11 @@ function mergeVolunteerState(existing, fresh) {
     return fresh;
 }
 
-async function handleDroppedPaths(paths) {
-    const xlsPaths = paths.filter(p => /\.(xls|xlsx)$/i.test(p));
-    if (!xlsPaths.length) return;
+async function handleDroppedFiles(files) {
+    const xlsFiles = Array.from(files).filter(f => /\.(xls|xlsx)$/i.test(f.name));
+    if (!xlsFiles.length) return;
 
-    if (!currentFolderPath) {
+    if (!currentDirectoryHandle) {
         showDropOverlay(true, 'Selecciona una carpeta primero antes de añadir archivos');
         setTimeout(hideDropOverlay, 2500);
         return;
@@ -273,20 +287,10 @@ async function handleDroppedPaths(paths) {
     document.getElementById('loader').classList.remove('hidden');
 
     let added = 0, updated = 0;
-    for (const srcPath of xlsPaths) {
+    for (const file of xlsFiles) {
         try {
-            const fileName = srcPath.replace(/\\/g, '/').split('/').pop();
-            const destPath = await join(currentFolderPath, fileName);
-
-            // Copy: read via existing Rust command, write via fs plugin
-            const base64 = await invoke('read_file_base64', { path: srcPath });
-            const binary  = atob(base64);
-            const bytes   = new Uint8Array(binary.length);
-            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-            await writeFile(destPath, bytes);
-
-            // Parse the newly copied file
-            const fresh = await parseVolunteerFile({ path: destPath, name: fileName });
+            // Parse the newly dropped file
+            const fresh = await parseVolunteerFile(file);
 
             // Merge into currentData
             const existingIdx = currentData.findIndex(v => v.nvol === fresh.nvol);
@@ -315,21 +319,34 @@ async function handleDroppedPaths(paths) {
     }
 }
 
-async function setupDragDrop() {
-    try {
-        const appWindow = getCurrentWebviewWindow();
-        await appWindow.onDragDropEvent((event) => {
-            const { type, paths } = event.payload;
-            if (type === 'over' || type === 'hover') {
-                const hasXls = (paths || []).some(p => /\.(xls|xlsx)$/i.test(p));
-                if (hasXls) showDropOverlay(false, 'Suelta el archivo XLS para añadir voluntario');
-            } else if (type === 'drop') {
-                handleDroppedPaths(paths || []);
-            } else {
-                hideDropOverlay();
-            }
-        });
-    } catch (e) {
-        console.warn('Drag-drop no disponible en este entorno:', e);
-    }
+function setupDragDrop() {
+    document.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        if (event.dataTransfer.types.includes('Files')) {
+            showDropOverlay(false, 'Suelta el archivo XLS para añadir voluntario');
+        }
+    });
+
+    document.addEventListener('dragleave', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        if (event.clientX === 0 || event.clientY === 0) {
+            hideDropOverlay();
+        }
+    });
+
+    document.addEventListener('drop', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        const files = event.dataTransfer.files;
+        if (files && files.length > 0) {
+            handleDroppedFiles(files);
+        } else {
+            hideDropOverlay();
+        }
+    });
 }

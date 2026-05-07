@@ -1,10 +1,9 @@
-import { invoke } from '@tauri-apps/api/core';
 import * as XLSX from 'xlsx';
 import { parseStringDate, parseHorasFirmadas } from './analyzer.js';
 
 export async function parseVolunteerFile(file) {
-    const base64 = await invoke('read_file_base64', { path: file.path });
-    const workbook = XLSX.read(base64, { type: 'base64' });
+    const arrayBuffer = await file.arrayBuffer();
+    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
@@ -43,14 +42,16 @@ export async function parseVolunteerFile(file) {
     return { nvol, fileName: file.name, isJefatura: false, services };
 }
 
-export async function processFolder(folderPath) {
-    const files = await invoke('read_dir', { path: folderPath });
+export async function processFolder(directoryHandle) {
     const volunteers = [];
-    for (const file of files) {
-        try {
-            volunteers.push(await parseVolunteerFile(file));
-        } catch (e) {
-            console.error('Error reading file', file.name, e);
+    for await (const entry of directoryHandle.values()) {
+        if (entry.kind === 'file' && (entry.name.endsWith('.xls') || entry.name.endsWith('.xlsx'))) {
+            try {
+                const file = await entry.getFile();
+                volunteers.push(await parseVolunteerFile(file));
+            } catch (e) {
+                console.error('Error reading file', entry.name, e);
+            }
         }
     }
     return volunteers;

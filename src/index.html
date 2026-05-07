@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ProteCheck</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
     <link rel="stylesheet" href="styles.css" />
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script type="module" src="/main.js" defer></script>
@@ -26,16 +27,17 @@
                     <button id="btn-manual" class="btn secondary manual-btn">Manual ▾</button>
                     <div id="manual-menu" class="manual-menu hidden">
                         <div class="manual-menu-header">// manual</div>
-                        <div class="manual-coming-soon">
-                            Manual de usuario <span class="wip-tag">coming soon</span>
-                        </div>
+                        <button id="manual-open" class="manual-link">
+                            <span class="manual-link-icon">☰</span> Manual de usuario
+                        </button>
                         <div class="manual-divider"></div>
-                        <a id="manual-contact" href="mailto:mrosaz00@estudiantes.unileon.es" class="manual-link">
+                        <a id="manual-contact" href="mailto:mrz_coding_sol.figure210@passinbox.com" class="manual-link">
                             <span class="manual-link-icon">✉</span> Contacto
                         </a>
-                        <a id="manual-github" href="https://github.com" class="manual-link">
+                        <a id="manual-github" href="https://github.com/miguelrzazo/ProteCheck" class="manual-link">
                             <span class="manual-link-icon">⌥</span> GitHub
                         </a>
+                        <div class="manual-signature">by Vol. 15970</div>
                     </div>
                 </div>
                 <button id="btn-theme-toggle" class="btn theme-toggle" title="Modo oscuro">🌙</button>
@@ -174,6 +176,124 @@
                             <!-- Rows generated dynamically -->
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual Modal -->
+        <div id="manual-modal" class="modal hidden">
+            <div class="modal-content card manual-modal-content">
+                <div class="modal-header">
+                    <span class="manual-modal-title">// manual de usuario</span>
+                    <button id="manual-close" class="btn icon-btn" style="margin-left:auto">✕</button>
+                </div>
+                <div class="manual-modal-body">
+                    <p>ProteCheck analiza informes <code>.xls</code> exportados desde <strong>Apúntate</strong> y calcula el estado de cumplimiento normativo de cada voluntario.</p>
+
+                    <hr class="manual-modal-divider">
+
+                    <h3>// primeros pasos</h3>
+                    <p>Haz clic en <strong>📁 Seleccionar Carpeta</strong> y elige la carpeta que contiene los archivos <code>.xls</code> de los voluntarios. También puedes arrastrar un archivo <code>.xls</code> directamente sobre la ventana para añadir o actualizar un voluntario.</p>
+
+                    <hr class="manual-modal-divider">
+
+                    <h3>// estados de cumplimiento</h3>
+                    <p>Cada voluntario recibe uno de estos estados:</p>
+                    <ul>
+                        <li><span class="badge valid">APTO</span> &mdash; Cumple las tres condiciones de cumplimiento.</li>
+                        <li><span class="badge alerta">ALERTA</span> &mdash; Falla una o dos condiciones.</li>
+                        <li><span class="badge peligro">PELIGRO</span> &mdash; Falla las tres condiciones.</li>
+                    </ul>
+                    <p>Las tres condiciones son:</p>
+                    <ul>
+                        <li><strong>≥ 80 h PC</strong> &mdash; Al menos 80 horas de Protección Civil válidas en el período seleccionado.</li>
+                        <li><strong>≤ 90 días sin servicio</strong> &mdash; El último servicio válido no puede tener más de 90 días de antigüedad.</li>
+                        <li><strong>RCP + AIT vigentes</strong> &mdash; Debe constar un reciclaje o recertificación de RCP y AIT en los últimos 3 años. Los voluntarios con menos de 3 años de antigüedad están <em>exentos</em>.</li>
+                    </ul>
+
+                    <hr class="manual-modal-divider">
+
+                    <h3>// tabla de voluntarios — columnas</h3>
+                    <ul>
+                        <li><strong>NVOL</strong> &mdash; Número de voluntario.</li>
+                        <li><strong>ANTIGÜEDAD</strong> &mdash; Años desde el primer servicio registrado.</li>
+                        <li><strong>SERVICIOS</strong> &mdash; Número de servicios en el período activo.</li>
+                        <li><strong>H.TOT</strong> &mdash; Total de horas en el período (válidas + no válidas).</li>
+                        <li><strong>HORAS PC</strong> &mdash; Horas válidas de Protección Civil contabilizadas para el requisito de 80 h. Un <code>~</code> indica ajuste manual.</li>
+                        <li><strong>H.PSICO</strong> &mdash; Horas de atención psicosocial.</li>
+                        <li><strong>RETÉN PC</strong> &mdash; Horas de retén en SAMUR/Fénix.</li>
+                        <li><strong>TRIMESTRAL</strong> &mdash; Días transcurridos desde el último servicio válido.</li>
+                        <li><strong>RCP/AIT</strong> &mdash; Fecha del último reciclaje detectado (MM/AAAA) o <em>EXENTO</em> si antigüedad &lt; 3 años.</li>
+                        <li><strong>ESTADO</strong> &mdash; <span class="badge valid">APTO</span> / <span class="badge alerta">ALERTA</span> / <span class="badge peligro">PELIGRO</span>.</li>
+                    </ul>
+
+                    <hr class="manual-modal-divider">
+
+                    <h3>// filtros</h3>
+                    <p><strong>ESTADO:</strong> Muestra todos los voluntarios, solo aptos, o los que tienen incidencias (ALERTA/PELIGRO). El filtro <em>FALLA RCP</em> aísla a quienes no tienen RCP+AIT en vigor.</p>
+                    <p><strong>HORAS:</strong> Alterna entre usar las horas <em>firmadas</em> (realizadas) o las <em>programadas</em> para el cálculo de las 80 h.</p>
+                    <p><strong>PERIODO:</strong></p>
+                    <ul>
+                        <li><strong>AÑO ACTUAL</strong> &mdash; Desde el 1 de enero del año en curso.</li>
+                        <li><strong>12M EXACTOS</strong> &mdash; Los 365 días anteriores a hoy.</li>
+                        <li><strong>12M VENCIDO</strong> &mdash; Desde el día 1 del mes, hace 12 meses. Equivale al período de cotización habitual.</li>
+                        <li><strong>3 MESES</strong> &mdash; Los últimos 90 días.</li>
+                    </ul>
+                    <p><em>Nota: el período solo afecta al cálculo de las 80 h. El control de los 90 días y el RCP son siempre absolutos.</em></p>
+
+                    <hr class="manual-modal-divider">
+
+                    <h3>// modal de detalle del voluntario</h3>
+                    <p>Haz clic en cualquier fila de la tabla para abrir el panel de detalle. Muestra todos los servicios del voluntario con su estado de validez, y permite ajustes manuales mediante la columna <strong>ACC</strong>:</p>
+                    <ul>
+                        <li><strong>H.PC</strong> &mdash; Fuerza que un servicio cuente (o no cuente) como horas de PC, independientemente del código de motivo.</li>
+                        <li><strong>+Psicosocial</strong> &mdash; Marca un servicio como atención psicosocial.</li>
+                    </ul>
+                    <p>El toggle <strong>ES JEFATURA</strong> activa el modo para voluntarios en puesto de mando: permite contabilizar horas de Oficina Voluntario sin límite.</p>
+
+                    <hr class="manual-modal-divider">
+
+                    <h3>// exportación</h3>
+                    <ul>
+                        <li><strong>XLSX</strong> &mdash; Libro Excel con todas las columnas y metadatos calculados.</li>
+                        <li><strong>CSV</strong> &mdash; Tabla plana compatible con cualquier hoja de cálculo.</li>
+                        <li><strong>PDF</strong> &mdash; Informe de cumplimiento listo para imprimir.</li>
+                    </ul>
+
+                    <hr class="manual-modal-divider">
+
+                    <h3>// preguntas frecuentes</h3>
+                    <ul>
+                        <li><strong>¿Qué archivos acepta ProteCheck?</strong> Archivos <code>.xls</code> o <code>.xlsx</code> exportados directamente desde Apúntate. El nombre del archivo debe contener el número de voluntario.</li>
+                        <li><strong>¿Por qué un voluntario aparece como ALERTA aunque tiene horas?</strong> Puede estar fallando el control de 90 días o el de RCP+AIT. Abre el modal de detalle para ver qué condición está incumplida.</li>
+                        <li><strong>¿Cómo se detecta el RCP?</strong> ProteCheck busca servicios cuya denominación contenga palabras como <em>RECICLAJE</em>, <em>RECERTIFICACIÓN</em> o <em>MÓDULO</em> junto con <em>RCP</em>, <em>SVB</em> o <em>AIT</em>.</li>
+                        <li><strong>¿Se pierden los ajustes manuales al refrescar?</strong> Los ajustes de Jefatura y Psicosocial se conservan al refrescar con el botón 🔄. Se pierden si se cierra la app.</li>
+                    </ul>
+
+                    <hr class="manual-modal-divider">
+
+                    <h3>// contacto</h3>
+                    <p>Para reportar errores o sugerencias: <a href="mailto:mrz_coding_sol.figure210@passinbox.com" style="color:var(--samur-blue)">mrz_coding_sol.figure210@passinbox.com</a></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Onboarding Modal -->
+        <div id="onboarding-modal" class="modal hidden">
+            <div class="modal-content card onboarding-content">
+                <div class="modal-header">
+                    <span id="onboarding-counter" class="onboarding-counter">1 / 3</span>
+                    <button id="onboarding-skip" class="btn icon-btn" style="margin-left:auto">Saltar</button>
+                </div>
+                <h2 id="onboarding-title" class="onboarding-title"></h2>
+                <div id="onboarding-body" class="onboarding-body"></div>
+                <div class="onboarding-footer">
+                    <div class="onboarding-dots">
+                        <span class="onboarding-dot active"></span>
+                        <span class="onboarding-dot"></span>
+                        <span class="onboarding-dot"></span>
+                    </div>
+                    <button id="onboarding-btn" class="btn primary">Siguiente →</button>
                 </div>
             </div>
         </div>

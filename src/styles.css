@@ -635,7 +635,11 @@ tbody tr.row-apto    td:first-child { border-left: 2px solid var(--valid); }
     font-size: 0.76rem;
     color: var(--text-muted);
     text-decoration: none;
+    background: transparent;
+    border: none;
     border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    width: 100%;
     transition: color 0.12s, background 0.12s;
     letter-spacing: 0.03em;
     cursor: pointer;
@@ -665,6 +669,41 @@ tbody tr.row-apto    td:first-child { border-left: 2px solid var(--valid); }
     font-weight: 600;
     flex-shrink: 0;
 }
+
+.manual-signature {
+    padding: 6px 12px;
+    font-size: 0.60rem;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    text-align: right;
+    border-top: 1px solid var(--border);
+    opacity: 0.6;
+    user-select: none;
+}
+
+/* ── Onboarding modal ─────────────────────────────────────── */
+.onboarding-content { max-width: 480px; gap: 18px; }
+.onboarding-counter { font-size: 0.67rem; color: var(--text-muted); letter-spacing: 0.10em; }
+.onboarding-title { font-size: 0.95rem; font-weight: 600; color: var(--samur-blue); letter-spacing: 0.04em; }
+.onboarding-body { font-size: 0.82rem; color: var(--text-main); line-height: 1.75; }
+.onboarding-body ul { padding-left: 1.2rem; margin: 6px 0; }
+.onboarding-body li { margin-bottom: 4px; }
+.onboarding-body .badge { vertical-align: middle; }
+.onboarding-footer { display: flex; align-items: center; justify-content: space-between; }
+.onboarding-dots { display: flex; gap: 6px; align-items: center; }
+.onboarding-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-dim); transition: background 0.2s; }
+.onboarding-dot.active { background: var(--samur-blue); }
+
+/* ── Manual modal ─────────────────────────────────────────── */
+.manual-modal-content { max-width: 640px; max-height: 80vh; overflow-y: hidden; gap: 0; }
+.manual-modal-title { font-size: 0.75rem; letter-spacing: 0.08em; color: var(--samur-blue); }
+.manual-modal-body { overflow-y: auto; flex: 1; min-height: 0; padding: 16px 4px 16px 0; display: flex; flex-direction: column; gap: 14px; font-size: 0.82rem; line-height: 1.75; color: var(--text-main); }
+.manual-modal-body h3 { font-size: 0.72rem; letter-spacing: 0.10em; color: var(--samur-blue); text-transform: uppercase; margin: 8px 0 2px; }
+.manual-modal-body ul { padding-left: 1.2rem; margin: 4px 0; }
+.manual-modal-body li { margin-bottom: 3px; }
+.manual-modal-body .badge { vertical-align: middle; }
+.manual-modal-body code { font-family: monospace; font-size: 0.78rem; background: var(--bg-card); padding: 1px 5px; border-radius: 3px; }
+.manual-modal-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
 
 /* ── Service table row styles ────────────────────────────── */
 .row-invalid { opacity: 0.45; }

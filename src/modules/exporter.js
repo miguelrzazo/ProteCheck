@@ -2,8 +2,6 @@ import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
-import { save } from '@tauri-apps/plugin-dialog';
-import { writeTextFile, writeFile } from '@tauri-apps/plugin-fs';
 
 // ── Shared helpers ────────────────────────────────────────
 const SORT_LABELS = {
@@ -91,14 +89,15 @@ export async function exportToXLSX(data, horasMode = 'firmadas', timeFilter = 'a
     const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
 
     try {
-        const filePath = await save({
-            filters: [{ name: 'Excel', extensions: ['xlsx'] }],
-            defaultPath: `ProteCheck_${format(new Date(), 'yyyyMMdd_HHmm')}.xlsx`,
-        });
-        if (filePath) {
-            await writeFile(filePath, new Uint8Array(excelBuffer));
-            alert('Exportado a XLSX con éxito.');
-        }
+        const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ProteCheck_${format(new Date(), 'yyyyMMdd_HHmm')}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     } catch (e) {
         console.error(e);
         alert('Error al exportar XLSX.');
@@ -123,14 +122,15 @@ export async function exportToCSV(data, horasMode = 'firmadas', timeFilter = 'an
     const csv = XLSX.utils.sheet_to_csv(ws);
 
     try {
-        const filePath = await save({
-            filters: [{ name: 'CSV', extensions: ['csv'] }],
-            defaultPath: `ProteCheck_${format(new Date(), 'yyyyMMdd_HHmm')}.csv`,
-        });
-        if (filePath) {
-            await writeTextFile(filePath, csv);
-            alert('Exportado a CSV con éxito.');
-        }
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ProteCheck_${format(new Date(), 'yyyyMMdd_HHmm')}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     } catch (e) {
         console.error(e);
         alert('Error al exportar CSV.');
@@ -298,14 +298,7 @@ export async function exportToPDF(data, horasMode = 'firmadas', timeFilter = 'an
     });
 
     try {
-        const filePath = await save({
-            filters: [{ name: 'PDF', extensions: ['pdf'] }],
-            defaultPath: `ProteCheck_${format(new Date(), 'yyyyMMdd_HHmm')}.pdf`,
-        });
-        if (filePath) {
-            await writeFile(filePath, new Uint8Array(doc.output('arraybuffer')));
-            alert('Exportado a PDF con éxito.');
-        }
+        doc.save(`ProteCheck_${format(new Date(), 'yyyyMMdd_HHmm')}.pdf`);
     } catch (e) {
         console.error(e);
         alert('Error al exportar PDF.');

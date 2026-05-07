@@ -31,3 +31,4 @@ dist-ssr
 *.jpeg
 *.jpg
 AGENTS.md
+.vercel
