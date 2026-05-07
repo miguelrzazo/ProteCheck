@@ -9,6 +9,7 @@ let currentEstadoFilter = 'todo';
 let currentTimeFilter = 'anoActual';
 let currentHorasMode = 'firmadas';
 let currentDirectoryHandle = null;
+let currentFallbackFiles = null;
 
 // ── Theme toggle ─────────────────────────────────────────
 const THEMES = ['dark', 'light', 'system'];
@@ -154,48 +155,81 @@ document.addEventListener('DOMContentLoaded', () => {
         updateDashboard();
     });
 
+    // Safari Fallback handling
+    document.getElementById('fallback-folder-input').addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files);
+        if (!files || files.length === 0) return;
+        
+        currentFallbackFiles = files;
+        currentDirectoryHandle = null; // Clear primary API state
+        
+        document.getElementById('btn-refresh').classList.remove('hidden');
+        document.getElementById('dashboard').classList.add('hidden');
+        document.getElementById('loader').classList.remove('hidden');
+        
+        setTimeout(async () => {
+            currentData = await processFolder(currentFallbackFiles);
+            
+            document.getElementById('loader').classList.add('hidden');
+            
+            if (currentData.length === 0) {
+                alert('No se encontraron archivos .xls o .xlsx válidos en la carpeta seleccionada.');
+                return;
+            }
+            
+            updateDashboard();
+        }, 100);
+    });
+
     // First-run onboarding
     initOnboarding();
 });
 
 async function handleSelectFolder() {
-    try {
-        const directoryHandle = await window.showDirectoryPicker({
-            mode: 'read'
-        });
-        
-        if (directoryHandle) {
-            currentDirectoryHandle = directoryHandle;
-            document.getElementById('btn-refresh').classList.remove('hidden');
+    if (window.showDirectoryPicker) {
+        try {
+            const directoryHandle = await window.showDirectoryPicker({
+                mode: 'read'
+            });
             
-            document.getElementById('dashboard').classList.add('hidden');
-            document.getElementById('loader').classList.remove('hidden');
-            
-            // Allow UI to update
-            setTimeout(async () => {
-                currentData = await processFolder(directoryHandle);
+            if (directoryHandle) {
+                currentDirectoryHandle = directoryHandle;
+                currentFallbackFiles = null; // Clear fallback state
                 
-                document.getElementById('loader').classList.add('hidden');
+                document.getElementById('btn-refresh').classList.remove('hidden');
+                document.getElementById('dashboard').classList.add('hidden');
+                document.getElementById('loader').classList.remove('hidden');
                 
-                if (currentData.length === 0) {
-                    alert('No se encontraron archivos .xls o .xlsx válidos en la carpeta seleccionada.');
-                    return;
-                }
-                
-                updateDashboard();
-            }, 100);
+                // Allow UI to update
+                setTimeout(async () => {
+                    currentData = await processFolder(directoryHandle);
+                    
+                    document.getElementById('loader').classList.add('hidden');
+                    
+                    if (currentData.length === 0) {
+                        alert('No se encontraron archivos .xls o .xlsx válidos en la carpeta seleccionada.');
+                        return;
+                    }
+                    
+                    updateDashboard();
+                }, 100);
+            }
+        } catch(e) {
+            if (e.name !== 'AbortError') {
+                console.error(e);
+                alert('Error al seleccionar la carpeta. Usando método alternativo...');
+                document.getElementById('fallback-folder-input').click();
+            }
+            document.getElementById('loader').classList.add('hidden');
         }
-    } catch(e) {
-        if (e.name !== 'AbortError') {
-            console.error(e);
-            alert('Error al seleccionar la carpeta. Asegúrate de usar un navegador compatible (Chrome/Edge/Opera).');
-        }
-        document.getElementById('loader').classList.add('hidden');
+    } else {
+        // Fallback for Safari/Firefox
+        document.getElementById('fallback-folder-input').click();
     }
 }
 
 async function handleRefresh() {
-    if (!currentDirectoryHandle) return;
+    if (!currentDirectoryHandle && !currentFallbackFiles) return;
     
     // Guardar estados manuales actuales
     const manualStates = currentData.map(v => ({
@@ -208,7 +242,8 @@ async function handleRefresh() {
     
     try {
         // Volver a procesar la carpeta
-        const newData = await processFolder(currentDirectoryHandle);
+        const dataSource = currentDirectoryHandle ? currentDirectoryHandle : currentFallbackFiles;
+        const newData = await processFolder(dataSource);
         
         // Re-aplicar estados manuales
         newData.forEach(v => {
@@ -277,7 +312,7 @@ async function handleDroppedFiles(files) {
     const xlsFiles = Array.from(files).filter(f => /\.(xls|xlsx)$/i.test(f.name));
     if (!xlsFiles.length) return;
 
-    if (!currentDirectoryHandle) {
+    if (!currentDirectoryHandle && !currentFallbackFiles) {
         showDropOverlay(true, 'Selecciona una carpeta primero antes de añadir archivos');
         setTimeout(hideDropOverlay, 2500);
         return;
