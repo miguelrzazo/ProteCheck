@@ -6,6 +6,7 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
   root: './src',
+  publicDir: '../public',
   build: {
     outDir: '../dist',
     emptyOutDir: true,
