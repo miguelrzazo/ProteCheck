@@ -1,8 +1,12 @@
+import { inject } from '@vercel/analytics';
 import { processFolder, parseVolunteerFile } from './modules/parser.js';
 import { analyzeData } from './modules/analyzer.js';
 import { renderDashboard, setupSortHeaders, applySorting, getSortInfo } from './modules/dashboard.js';
 import { exportToXLSX, exportToCSV, exportToPDF } from './modules/exporter.js';
 import { initOnboarding } from './modules/onboarding.js';
+
+// Initialize Vercel Web Analytics
+inject();
 
 let currentData = [];
 let currentEstadoFilter = 'todo';
