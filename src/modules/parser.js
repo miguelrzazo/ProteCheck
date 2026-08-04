@@ -1,6 +1,35 @@
 import * as XLSX from 'xlsx';
 import { parseStringDate, parseHorasFirmadas } from './analyzer.js';
 
+const HEADER_ALIASES = {
+    'motivo': 'motivo',
+    'fecha': 'fecha',
+    'denominacion': 'denominacion',
+    'lugar': 'lugar',
+    'n. servicio': 'nservicio',
+    'horas': 'horas',
+    'h.firmadas': 'hfirmadas',
+};
+
+function findColumnMap(rows) {
+    // Scan the first rows for a header row containing a "Motivo" column
+    for (let i = 0; i < Math.min(rows.length, 5); i++) {
+        const r = rows[i];
+        if (!r) continue;
+        const motivoIdx = r.findIndex(c => c != null && String(c).trim().toLowerCase() === 'motivo');
+        if (motivoIdx !== -1) {
+            const col = { motivo: motivoIdx };
+            for (let j = motivoIdx; j < r.length; j++) {
+                const key = r[j] != null ? String(r[j]).trim().toLowerCase() : '';
+                if (HEADER_ALIASES[key]) col[HEADER_ALIASES[key]] = j;
+            }
+            return { headerRow: i, col };
+        }
+    }
+    // Fallback: legacy 8-column layout with a leading empty column
+    return { headerRow: 0, col: { motivo: 1, fecha: 2, denominacion: 3, lugar: 4, nservicio: 5, horas: 6, hfirmadas: 7 } };
+}
+
 export async function parseVolunteerFile(file) {
     const arrayBuffer = await file.arrayBuffer();
     const workbook = XLSX.read(arrayBuffer, { type: 'array' });
@@ -12,18 +41,20 @@ export async function parseVolunteerFile(file) {
     const nvol = match ? match[0] : file.name;
     const services = [];
 
-    for (let i = 1; i < rows.length; i++) {
+    const { headerRow, col } = findColumnMap(rows);
+
+    for (let i = headerRow + 1; i < rows.length; i++) {
         const r = rows[i];
-        if (!r || r.length < 8) continue;
-        const motivo = r[1]?.toString().trim();
+        if (!r) continue;
+        const motivo = r[col.motivo]?.toString().trim();
         if (!motivo) continue;
 
-        const fechaStr  = r[2]?.toString().trim();
-        const denom     = r[3]?.toString().trim();
-        const lugar     = r[4]?.toString().trim();
-        const nServicio = parseFloat(r[5]);
-        const horasProg = parseFloat(r[6]) || 0;
-        const horasFirmStr = r[7]?.toString().trim();
+        const fechaStr  = r[col.fecha]?.toString().trim();
+        const denom     = r[col.denominacion]?.toString().trim();
+        const lugar     = r[col.lugar]?.toString().trim();
+        const nServicio = parseFloat(r[col.nservicio]);
+        const horasProg = parseFloat(r[col.horas]) || 0;
+        const horasFirmStr = r[col.hfirmadas]?.toString().trim();
 
         services.push({
             motivo,
