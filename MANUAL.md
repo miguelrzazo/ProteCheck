@@ -51,7 +51,7 @@ Cada fila representa un voluntario. Las columnas se pueden ordenar haciendo clic
 | **H.TOT** | Total de horas en el período (válidas + no válidas) |
 | **HORAS PC** | Horas válidas de Protección Civil para el requisito de 80 h. Un `~` indica ajuste manual. |
 | **H.PSICO** | Horas de atención psicosocial |
-| **RETÉN PC** | Horas de retén en SAMUR/Fénix |
+| **RETÉN PC** | Horas de retén en SAMUR |
 | **TRIMESTRAL** | Días transcurridos desde el último servicio válido |
 | **RCP/AIT** | Fecha del último reciclaje detectado (MM/AAAA) o *EXENTO* si antigüedad < 3 años |
 | **ESTADO** | Estado de cumplimiento global: **APTO** / **ALERTA** / **PELIGRO** |
@@ -76,7 +76,7 @@ El voluntario falla los tres requisitos simultáneamente.
 
 **Requisito 1 — 80 horas de PC**
 
-En la ventana de tiempo seleccionada, el voluntario debe acumular al menos **80 horas de Protección Civil válidas**. Las categorías que cuentan son las de motivos 2.2, 4.1, 4.2, 6.1, 6.7, 6.5 y todos los prefijos 3.x y 7.x, más los servicios marcados como "Entrevista". Los servicios de "Oficina Voluntario" cuentan con un límite de uno por período, excepto para voluntarios en Jefatura.
+En la ventana de tiempo seleccionada, el voluntario debe acumular al menos **80 horas de Protección Civil válidas**. Las categorías que cuentan son las de motivos 2.2, 4.1, 4.2, 6.1, 6.7 y todos los prefijos 3.x y 7.x, más los servicios marcados como "Entrevista". Los servicios de "Oficina Voluntario" cuentan con un límite de uno por período, excepto para voluntarios en Jefatura. Los servicios de Retén Fénix no cuentan para las horas PC ni para las horas de retén (solo SAMUR). El Retén Romeo (motivo 5.3) se contabiliza como horas psicosociales.
 
 **Requisito 2 — Control de los 90 días**
 

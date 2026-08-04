@@ -46,6 +46,7 @@ export function analyzeData(volunteers, estadoFilter, timeFilter, horasMode = 'f
             const den = (s.denominacion || '').toLowerCase();
             const isOficina = den.includes('oficina voluntario');
             const isEntrevista = den.includes('entrevista');
+            const isFenix = den.includes('fenix');
 
             // Check valid services (PC) for 90-days clock
             if (s.esValido || isOficina || isEntrevista) {
@@ -77,7 +78,9 @@ export function analyzeData(volunteers, estadoFilter, timeFilter, horasMode = 'f
 
                 let addsToHours = false;
                 if (!s.forceInvalid) {
-                    if (isOficina) {
+                    if (isFenix && !s.forceValid) {
+                        // Retén Fénix never counts naturally; manual override can still add it
+                    } else if (isOficina) {
                         if (vol.isJefatura) {
                             addsToHours = true;
                         } else if (!hasCountedOficinaInWindow) {
@@ -96,11 +99,11 @@ export function analyzeData(volunteers, estadoFilter, timeFilter, horasMode = 'f
                 }
 
                 // Psicosocial and Reten check
-                const isPsico = s.forcePsicosocial || isEntrevista || den.includes('romeo') || den.includes('reunion psicosocial') || den.includes('reunión psicosocial');
+                const isPsico = s.forcePsicosocial || isEntrevista || s.motivo === '5.3' || den.includes('romeo') || den.includes('reunion psicosocial') || den.includes('reunión psicosocial');
 
                 if (isPsico) {
                     horasPsicosocial += horas;
-                } else if (den.includes('samur') || den.includes('fenix')) {
+                } else if (den.includes('samur')) {
                     horasRetenPC += horas;
                 }
             }

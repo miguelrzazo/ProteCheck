@@ -57,8 +57,9 @@ Two Tauri commands exposed:
 The analyzer computes three binary compliance requirements per volunteer:
 
 1. **80 Hours** (`cumple80Horas`): Valid PC hours in the selected time window ≥ 80
-   - Valid categories: motivos [2.2, 4.1, 4.2, 6.1, 6.7, 6.5] or prefixes [3.*, 7.*], "Oficina Voluntario" (limited), "Entrevista"
+   - Valid categories: motivos [2.2, 4.1, 4.2, 6.1, 6.7] or prefixes [3.*, 7.*], "Oficina Voluntario" (limited), "Entrevista"
    - Jefatura volunteers can count unlimited "Oficina Voluntario"; others only the first one per window
+   - Retén Fénix services never count toward the 80h or Retén hours; Retén Romeo (motivo 5.3) counts as psicosocial
 
 2. **90 Days** (`cumple90Dias`): Last valid service date ≤ 90 days ago
    - Valid services reset the clock; office/interview work also counts

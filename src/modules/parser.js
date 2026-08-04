@@ -34,7 +34,7 @@ export async function parseVolunteerFile(file) {
             nServicio,
             horasProgramadas: horasProg,
             horasFirmadas:   parseHorasFirmadas(horasFirmStr),
-            esValido: ['2.2', '4.1', '4.2', '6.1', '6.7', '6.5'].includes(motivo)
+            esValido: ['2.2', '4.1', '4.2', '6.1', '6.7'].includes(motivo)
                       || motivo.startsWith('3.') || motivo.startsWith('7.'),
         });
     }

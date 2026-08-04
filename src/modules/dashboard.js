@@ -194,8 +194,9 @@ function showVolunteerModal(vol) {
         const den = (s.denominacion || '').toLowerCase();
         const isOficina    = den.includes('oficina voluntario');
         const isEntrevista = den.includes('entrevista');
+        const isFenix      = den.includes('fenix');
         // Whether the service would count naturally (without any force flags)
-        const isNaturalPC = s.esValido || isOficina || isEntrevista;
+        const isNaturalPC = !isFenix && (s.esValido || isOficina || isEntrevista);
 
         // Badge reflecting current PC state
         let validBadge;
@@ -203,6 +204,8 @@ function showVolunteerModal(vol) {
             validBadge = '<span class="badge peligro" style="font-size:10px;">-PC</span>';
         } else if (s.forceValid && !s.esValido) {
             validBadge = '<span class="badge alerta" style="font-size:10px;">+PC</span>';
+        } else if (isFenix && !s.forceValid) {
+            validBadge = '<span class="badge peligro" style="font-size:10px;">Fénix</span>';
         } else if (s.esValido) {
             validBadge = '<span class="badge valid" style="font-size:10px;">Válido</span>';
         } else if (isOficina) {
