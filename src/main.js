@@ -294,6 +294,15 @@ function hideDropOverlay() {
     document.getElementById('drop-overlay').classList.add('hidden');
 }
 
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    toast.textContent = message;
+    toast.classList.remove('hidden');
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => toast.classList.add('hidden'), 2200);
+}
+
 // Preserve manual service flags when re-importing a volunteer
 function mergeVolunteerState(existing, fresh) {
     fresh.isJefatura = existing.isJefatura;
@@ -314,15 +323,16 @@ function mergeVolunteerState(existing, fresh) {
 
 async function handleDroppedFiles(files) {
     const xlsFiles = Array.from(files).filter(f => /\.(xls|xlsx)$/i.test(f.name));
-    if (!xlsFiles.length) return;
-
-    if (!currentDirectoryHandle && !currentFallbackFiles) {
-        showDropOverlay(true, 'Selecciona una carpeta primero antes de añadir archivos');
-        setTimeout(hideDropOverlay, 2500);
+    if (!xlsFiles.length) {
+        showToast('⚠ Solo se admiten archivos .xls o .xlsx');
         return;
     }
 
-    hideDropOverlay();
+    if (!currentDirectoryHandle && !currentFallbackFiles) {
+        showToast('⚠ Selecciona una carpeta primero antes de añadir archivos');
+        return;
+    }
+
     document.getElementById('loader').classList.remove('hidden');
 
     let added = 0, updated = 0;
@@ -348,13 +358,11 @@ async function handleDroppedFiles(files) {
     document.getElementById('loader').classList.add('hidden');
     if (added + updated > 0) updateDashboard();
 
-    // Brief toast-style message via the overlay
     const msg = [added && `${added} voluntario${added > 1 ? 's' : ''} añadido${added > 1 ? 's' : ''}`,
                  updated && `${updated} actualizado${updated > 1 ? 's' : ''}`]
         .filter(Boolean).join(', ');
     if (msg) {
-        showDropOverlay(false, `✓ ${msg}`);
-        setTimeout(hideDropOverlay, 1800);
+        showToast(`✓ ${msg}`);
     }
 }
 
@@ -371,8 +379,12 @@ function setupDragDrop() {
     document.addEventListener('dragleave', (event) => {
         event.preventDefault();
         event.stopPropagation();
-        
-        if (event.clientX === 0 || event.clientY === 0) {
+
+        // Hide when the pointer leaves the viewport through any edge
+        const inViewport = event.clientX > 0 && event.clientY > 0 &&
+            event.clientX < (window.innerWidth || document.documentElement.clientWidth) &&
+            event.clientY < (window.innerHeight || document.documentElement.clientHeight);
+        if (!inViewport || event.relatedTarget === null) {
             hideDropOverlay();
         }
     });
@@ -380,12 +392,11 @@ function setupDragDrop() {
     document.addEventListener('drop', (event) => {
         event.preventDefault();
         event.stopPropagation();
-        
+
+        hideDropOverlay();
         const files = event.dataTransfer.files;
         if (files && files.length > 0) {
             handleDroppedFiles(files);
-        } else {
-            hideDropOverlay();
         }
     });
 }
