@@ -2,7 +2,7 @@
 
 > Compliance tracking desktop app for volunteer emergency services.
 
-Built with **Tauri v2** (Rust) and **Vanilla JS** (Vite). Runs natively on macOS, Windows, and Linux.
+Built with (Rust) and **Vanilla JS** (Vite). Runs on web and deployed on Vercel
 
 ## What it does
 
@@ -35,21 +35,7 @@ Each volunteer is classified as **APTO** (fully compliant), **ALERTA** (partial 
 | PDF export | jsPDF + jsPDF-AutoTable |
 | Date logic | date-fns |
 
-## Running locally
 
-```bash
-# Prerequisites: Node 18+, Rust stable, Tauri CLI v2
-npm install
-npm run tauri dev
-```
-
-## Building for distribution
-
-```bash
-npm run tauri build
-```
-
-Produces platform installers: `.dmg` on macOS, `.msi`/`.exe` on Windows, `.deb`/`.AppImage` on Linux.
 
 ---
 
