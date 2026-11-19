@@ -1,13 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as XLSX from 'xlsx';
-import { parseVolunteerFile } from './parser.js';
+import { parseVolunteerFile, processFolder } from './parser.js';
 
 function makeFile(name, rows) {
     const ws = XLSX.utils.aoa_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Hoja1');
-    const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    const bookType = /\.xls$/i.test(name) ? 'biff8' : 'xlsx';
+    const buf = XLSX.write(wb, { type: 'buffer', bookType });
     return new File([buf], name);
 }
 
@@ -41,4 +42,19 @@ test('parses 8-column xls layout (leading empty column)', async () => {
     assert.equal(vol.services[0].motivo, '3.1');
     assert.equal(vol.services[0].denominacion, 'Equipo Psicosocial');
     assert.equal(vol.services[0].esValido, true);
+});
+
+test('imports a folder with mixed-case Excel extensions and ignores companion files', async () => {
+    const rows = [
+        HEADER_7,
+        ['4.2', '20/12/2025', 'SERVICIO DE PRUEBA', 'CENTRO', 1, 6, '06:00'],
+    ];
+    const reports = await processFolder([
+        makeFile('9001.XLS', rows),
+        new File(['omitidos'], 'omitidos.csv'),
+        makeFile('9002.xlsx', rows),
+    ]);
+
+    assert.deepEqual(reports.map(report => report.nvol), ['9001', '9002']);
+    assert.ok(reports.every(report => report.services.length === 1));
 });

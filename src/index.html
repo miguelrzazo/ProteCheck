@@ -39,7 +39,7 @@
                 </div>
                 <span class="cursor-blink">▋</span>
             </div>
-            <div style="display:flex; align-items:center; gap:8px;">
+            <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
                 <div class="manual-wrap">
                     <button id="btn-manual" class="btn secondary manual-btn">Manual ▾</button>
                     <div id="manual-menu" class="manual-menu hidden">
@@ -58,9 +58,11 @@
                     </div>
                 </div>
                 <button id="btn-theme-toggle" class="btn theme-toggle" title="Modo oscuro">🌙</button>
-                <button id="btn-refresh" class="btn secondary hidden" title="Refrescar carpeta">🔄</button>
+                <button id="btn-refresh" class="btn secondary hidden" title="Volver a seleccionar la carpeta" aria-label="Refrescar carpeta">🔄</button>
                 <button id="btn-select-folder" class="btn primary">📁 Seleccionar Carpeta</button>
-                <input type="file" id="fallback-folder-input" webkitdirectory directory multiple style="display: none;" />
+                <button id="btn-select-files" class="btn secondary">Seleccionar archivos</button>
+                <input type="file" id="folder-input" webkitdirectory multiple hidden />
+                <input type="file" id="files-input" accept=".xls,.xlsx" multiple hidden />
             </div>
         </header>
 
@@ -211,7 +213,7 @@
                     <hr class="manual-modal-divider">
 
                     <h3>// primeros pasos</h3>
-                    <p>Haz clic en <strong>📁 Seleccionar Carpeta</strong> y elige la carpeta que contiene los archivos <code>.xls</code> de los voluntarios. También puedes arrastrar un archivo <code>.xls</code> directamente sobre la ventana para añadir o actualizar un voluntario.</p>
+                    <p>Haz clic en <strong>📁 Seleccionar Carpeta</strong> y elige la carpeta que contiene los archivos <code>.xls</code> de los voluntarios. También puedes elegir archivos individuales o arrastrar una carpeta o varios informes a la ventana.</p>
 
                     <hr class="manual-modal-divider">
 
@@ -320,7 +322,7 @@
         <div id="drop-overlay" class="drop-overlay hidden">
             <div class="drop-overlay-inner">
                 <span class="drop-icon">⤓</span>
-                <p id="drop-message">Suelta el archivo XLS para añadir voluntario</p>
+                <p id="drop-message">Suelta la carpeta o los archivos Excel</p>
             </div>
         </div>
 
