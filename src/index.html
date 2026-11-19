@@ -134,10 +134,12 @@
                                 <tr>
                                     <th class="sortable" data-sort="nvol">NVOL</th>
                                     <th class="sortable" data-sort="antiguedadYears">ANTIGÜEDAD</th>
-                                    <th class="sortable" data-sort="serviciosEnVentana">SERVICIOS</th>
-                                    <th class="sortable" data-sort="horasTotalesTimeWindow">H.TOT</th>
+                                    <th class="sortable" data-sort="serviciosEnVentana">SERV. TOTALES</th>
+                                    <th class="sortable" data-sort="horasTotalesTimeWindow">H. TOTALES</th>
+                                    <th class="sortable" data-sort="serviciosPC">SERV. PC</th>
                                     <th class="sortable" data-sort="horasValidasTimeWindow">HORAS PC</th>
-                                    <th class="sortable" data-sort="horasPsicosocial">H.PSICO</th>
+                                    <th class="sortable" data-sort="serviciosPsicosocial">SERV. PSICOSOCIAL</th>
+                                    <th class="sortable" data-sort="horasPsicosocial">H. PSICOSOCIAL</th>
                                     <th class="sortable" data-sort="horasRetenPC">RETÉN PC</th>
                                     <th>TRIMESTRAL</th>
                                     <th>RCP/AIT</th>
@@ -177,7 +179,9 @@
 
                 <div class="modal-metrics">
                     <span class="badge">ANTIGÜEDAD: <b id="modal-antiguedad">0</b>a</span>
-                    <span class="badge">HORAS PC: <b id="modal-h-actual">0</b></span>
+                    <span class="badge">TOTAL · <b id="modal-servicios-totales">0</b> serv. · <b id="modal-horas-totales">0</b> h</span>
+                    <span class="badge">PC · <b id="modal-servicios-pc">0</b> serv. · <b id="modal-h-actual">0</b> h</span>
+                    <span class="badge">PSICOSOCIAL · <b id="modal-servicios-psicosocial">0</b> serv. · <b id="modal-horas-psicosocial">0</b> h</span>
                     <span class="badge">SIN SERVICIO: <b id="modal-dias">0</b>d</span>
                 </div>
 
@@ -237,10 +241,11 @@
                     <ul>
                         <li><strong>NVOL</strong> &mdash; Número de voluntario.</li>
                         <li><strong>ANTIGÜEDAD</strong> &mdash; Años desde el primer servicio registrado.</li>
-                        <li><strong>SERVICIOS</strong> &mdash; Número de servicios en el período activo.</li>
-                        <li><strong>H.TOT</strong> &mdash; Total de horas en el período (válidas + no válidas).</li>
+                        <li><strong>SERV. TOTALES</strong> &mdash; Número de servicios en el período activo.</li>
+                        <li><strong>H. TOTALES</strong> &mdash; Total de horas en el período (válidas + no válidas).</li>
+                        <li><strong>SERV. PC</strong> &mdash; Servicios reconocidos por las mismas reglas que HORAS PC.</li>
                         <li><strong>HORAS PC</strong> &mdash; Horas válidas de Protección Civil contabilizadas para el requisito de 80 h. Un <code>~</code> indica ajuste manual.</li>
-                        <li><strong>H.PSICO</strong> &mdash; Horas de atención psicosocial.</li>
+                        <li><strong>SERV. PSICOSOCIAL / H. PSICOSOCIAL</strong> &mdash; Servicios y horas de atención psicosocial. El motivo 5.3 (Retén Romeo) se incluye automáticamente.</li>
                         <li><strong>RETÉN PC</strong> &mdash; Horas de retén en SAMUR.</li>
                         <li><strong>TRIMESTRAL</strong> &mdash; Días transcurridos desde el último servicio válido.</li>
                         <li><strong>RCP/AIT</strong> &mdash; Fecha del último reciclaje detectado (MM/AAAA) o <em>EXENTO</em> si antigüedad &lt; 3 años.</li>

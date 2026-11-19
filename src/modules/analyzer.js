@@ -35,6 +35,8 @@ export function analyzeData(volunteers, estadoFilter, timeFilter, horasMode = 'f
         let horasPsicosocial = 0;
         let horasRetenPC = 0;
         let serviciosEnVentana = 0;
+        let serviciosPC = 0;
+        let serviciosPsicosocial = 0;
 
         let hasRCP = false;
         let hasAIT = false;
@@ -47,6 +49,11 @@ export function analyzeData(volunteers, estadoFilter, timeFilter, horasMode = 'f
             const isOficina = den.includes('oficina voluntario');
             const isEntrevista = den.includes('entrevista');
             const isFenix = den.includes('fenix');
+            const isRomeo = /^5[.,]3(?:$|[\s:–—-])/.test(String(s.motivo ?? '').trim())
+                || den.includes('romeo');
+            const isPsico = s.forcePsicosocial || isEntrevista || isRomeo
+                || den.includes('reunion psicosocial') || den.includes('reunión psicosocial');
+            s.esPsicosocial = Boolean(isPsico);
 
             // Check valid services (PC) for 90-days clock
             if (s.esValido || isOficina || isEntrevista) {
@@ -96,13 +103,12 @@ export function analyzeData(volunteers, estadoFilter, timeFilter, horasMode = 'f
 
                 if (addsToHours) {
                     horasValidasTimeWindow += horas;
+                    serviciosPC++;
                 }
-
-                // Psicosocial and Reten check
-                const isPsico = s.forcePsicosocial || isEntrevista || s.motivo === '5.3' || den.includes('romeo') || den.includes('reunion psicosocial') || den.includes('reunión psicosocial');
 
                 if (isPsico) {
                     horasPsicosocial += horas;
+                    serviciosPsicosocial++;
                 } else if (den.includes('samur')) {
                     horasRetenPC += horas;
                 }
@@ -162,6 +168,8 @@ export function analyzeData(volunteers, estadoFilter, timeFilter, horasMode = 'f
             horasPsicosocial,
             horasRetenPC,
             serviciosEnVentana,
+            serviciosPC,
+            serviciosPsicosocial,
             hasOverrides,
             daysSinceLastValid,
             cumple90Dias,

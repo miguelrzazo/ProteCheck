@@ -97,7 +97,9 @@ export function renderDashboard(analyzedData, timeFilter = 'anoActual', horasMod
             <td>${vol.antiguedadYears.toFixed(1)}a</td>
             <td>${vol.serviciosEnVentana}</td>
             <td>${vol.horasTotalesTimeWindow.toFixed(1)}h</td>
+            <td>${vol.serviciosPC}</td>
             <td>${horasBar(vol.horasValidasTimeWindow)} ${vol.horasValidasTimeWindow.toFixed(1)}h${overrideMark}</td>
+            <td>${vol.serviciosPsicosocial}</td>
             <td>${vol.horasPsicosocial.toFixed(1)}h</td>
             <td>${vol.horasRetenPC.toFixed(1)}h</td>
             <td>${vol.cumple90Dias ? 'OK' : 'FAIL'}</td>
@@ -131,7 +133,12 @@ function showVolunteerModal(vol) {
     badgeEl.innerText = vol.estado;
 
     document.getElementById('modal-antiguedad').innerText = vol.antiguedadYears.toFixed(1);
+    document.getElementById('modal-servicios-totales').innerText = vol.serviciosEnVentana;
+    document.getElementById('modal-horas-totales').innerText = vol.horasTotalesTimeWindow.toFixed(1);
+    document.getElementById('modal-servicios-pc').innerText = vol.serviciosPC;
     document.getElementById('modal-h-actual').innerText = vol.horasValidasTimeWindow.toFixed(1);
+    document.getElementById('modal-servicios-psicosocial').innerText = vol.serviciosPsicosocial;
+    document.getElementById('modal-horas-psicosocial').innerText = vol.horasPsicosocial.toFixed(1);
     document.getElementById('modal-dias').innerText = vol.daysSinceLastValid === Infinity ? '∞' : vol.daysSinceLastValid;
 
     // Jefatura checkbox — dispatches to main.js which updates raw data then re-analyzes
@@ -213,12 +220,15 @@ function showVolunteerModal(vol) {
         } else if (isEntrevista) {
             validBadge = '<span class="badge alerta" style="font-size:10px;">Entrevista</span>';
         } else {
-            validBadge = '<span class="badge peligro" style="font-size:10px;">No Válido</span>';
+            validBadge = s.esPsicosocial ? '' : '<span class="badge peligro" style="font-size:10px;">No Válido</span>';
         }
+        const psicoBadge = s.esPsicosocial
+            ? '<span class="badge valid" style="font-size:10px;">Psicosocial</span>'
+            : '';
 
-        // Dim rows that aren't contributing to PC hours
+        // Keep recognized Psicosocial services visible alongside PC services.
         const isExcluded = s.forceInvalid || (!isNaturalPC && !s.forceValid);
-        if (isExcluded) tr.classList.add('row-invalid');
+        if (isExcluded && !s.esPsicosocial) tr.classList.add('row-invalid');
         if (/(RCP|AIT|SVB)/i.test(s.denominacion || '')) tr.classList.add('row-rcp');
 
         // PC button: state depends on whether service naturally counts or not
@@ -236,7 +246,7 @@ function showVolunteerModal(vol) {
 
         tr.innerHTML = `
             <td>${s.fechaStr}</td>
-            <td>${s.motivo}<br>${validBadge}</td>
+            <td>${s.motivo}<br>${validBadge} ${psicoBadge}</td>
             <td>${s.denominacion || ''}</td>
             <td>${(s.horasUsadas ?? s.horasFirmadas).toFixed(2)}h</td>
             <td>
