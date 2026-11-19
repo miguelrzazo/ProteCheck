@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
 import { parseStringDate, parseHorasFirmadas } from './analyzer.js';
+import { isExcelFile } from './import-files.js';
 
 const HEADER_ALIASES = {
     'motivo': 'motivo',
@@ -73,32 +74,13 @@ export async function parseVolunteerFile(file) {
     return { nvol, fileName: file.name, isJefatura: false, services };
 }
 
-export async function processFolder(directoryHandleOrFiles) {
+export async function processFolder(files) {
     const volunteers = [];
-    
-    // Fallback mode (Safari / Firefox)
-    if (Array.isArray(directoryHandleOrFiles)) {
-        for (const file of directoryHandleOrFiles) {
-            if (file.name.endsWith('.xls') || file.name.endsWith('.xlsx')) {
-                try {
-                    volunteers.push(await parseVolunteerFile(file));
-                } catch (e) {
-                    console.error('Error reading file', file.name, e);
-                }
-            }
-        }
-        return volunteers;
-    }
-
-    // Modern API mode (Chrome / Edge)
-    for await (const entry of directoryHandleOrFiles.values()) {
-        if (entry.kind === 'file' && (entry.name.endsWith('.xls') || entry.name.endsWith('.xlsx'))) {
-            try {
-                const file = await entry.getFile();
-                volunteers.push(await parseVolunteerFile(file));
-            } catch (e) {
-                console.error('Error reading file', entry.name, e);
-            }
+    for (const file of files.filter(isExcelFile)) {
+        try {
+            volunteers.push(await parseVolunteerFile(file));
+        } catch (error) {
+            console.error('Error reading file', file.name, error);
         }
     }
     return volunteers;

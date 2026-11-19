@@ -39,7 +39,7 @@
                 </div>
                 <span class="cursor-blink">▋</span>
             </div>
-            <div style="display:flex; align-items:center; gap:8px;">
+            <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
                 <div class="manual-wrap">
                     <button id="btn-manual" class="btn secondary manual-btn">Manual ▾</button>
                     <div id="manual-menu" class="manual-menu hidden">
@@ -58,9 +58,11 @@
                     </div>
                 </div>
                 <button id="btn-theme-toggle" class="btn theme-toggle" title="Modo oscuro">🌙</button>
-                <button id="btn-refresh" class="btn secondary hidden" title="Refrescar carpeta">🔄</button>
+                <button id="btn-refresh" class="btn secondary hidden" title="Volver a seleccionar la carpeta" aria-label="Refrescar carpeta">🔄</button>
                 <button id="btn-select-folder" class="btn primary">📁 Seleccionar Carpeta</button>
-                <input type="file" id="fallback-folder-input" webkitdirectory directory multiple style="display: none;" />
+                <button id="btn-select-files" class="btn secondary">Seleccionar archivos</button>
+                <input type="file" id="folder-input" webkitdirectory multiple hidden />
+                <input type="file" id="files-input" accept=".xls,.xlsx" multiple hidden />
             </div>
         </header>
 
@@ -132,10 +134,12 @@
                                 <tr>
                                     <th class="sortable" data-sort="nvol">NVOL</th>
                                     <th class="sortable" data-sort="antiguedadYears">ANTIGÜEDAD</th>
-                                    <th class="sortable" data-sort="serviciosEnVentana">SERVICIOS</th>
-                                    <th class="sortable" data-sort="horasTotalesTimeWindow">H.TOT</th>
+                                    <th class="sortable" data-sort="serviciosEnVentana">SERV. TOTALES</th>
+                                    <th class="sortable" data-sort="horasTotalesTimeWindow">H. TOTALES</th>
+                                    <th class="sortable" data-sort="serviciosPC">SERV. PC</th>
                                     <th class="sortable" data-sort="horasValidasTimeWindow">HORAS PC</th>
-                                    <th class="sortable" data-sort="horasPsicosocial">H.PSICO</th>
+                                    <th class="sortable" data-sort="serviciosPsicosocial">SERV. PSICOSOCIAL</th>
+                                    <th class="sortable" data-sort="horasPsicosocial">H. PSICOSOCIAL</th>
                                     <th class="sortable" data-sort="horasRetenPC">RETÉN PC</th>
                                     <th>TRIMESTRAL</th>
                                     <th>RCP/AIT</th>
@@ -175,7 +179,9 @@
 
                 <div class="modal-metrics">
                     <span class="badge">ANTIGÜEDAD: <b id="modal-antiguedad">0</b>a</span>
-                    <span class="badge">HORAS PC: <b id="modal-h-actual">0</b></span>
+                    <span class="badge">TOTAL · <b id="modal-servicios-totales">0</b> serv. · <b id="modal-horas-totales">0</b> h</span>
+                    <span class="badge">PC · <b id="modal-servicios-pc">0</b> serv. · <b id="modal-h-actual">0</b> h</span>
+                    <span class="badge">PSICOSOCIAL · <b id="modal-servicios-psicosocial">0</b> serv. · <b id="modal-horas-psicosocial">0</b> h</span>
                     <span class="badge">SIN SERVICIO: <b id="modal-dias">0</b>d</span>
                 </div>
 
@@ -211,7 +217,7 @@
                     <hr class="manual-modal-divider">
 
                     <h3>// primeros pasos</h3>
-                    <p>Haz clic en <strong>📁 Seleccionar Carpeta</strong> y elige la carpeta que contiene los archivos <code>.xls</code> de los voluntarios. También puedes arrastrar un archivo <code>.xls</code> directamente sobre la ventana para añadir o actualizar un voluntario.</p>
+                    <p>Haz clic en <strong>📁 Seleccionar Carpeta</strong> y elige la carpeta que contiene los archivos <code>.xls</code> de los voluntarios. También puedes elegir archivos individuales o arrastrar una carpeta o varios informes a la ventana.</p>
 
                     <hr class="manual-modal-divider">
 
@@ -235,10 +241,11 @@
                     <ul>
                         <li><strong>NVOL</strong> &mdash; Número de voluntario.</li>
                         <li><strong>ANTIGÜEDAD</strong> &mdash; Años desde el primer servicio registrado.</li>
-                        <li><strong>SERVICIOS</strong> &mdash; Número de servicios en el período activo.</li>
-                        <li><strong>H.TOT</strong> &mdash; Total de horas en el período (válidas + no válidas).</li>
+                        <li><strong>SERV. TOTALES</strong> &mdash; Número de servicios en el período activo.</li>
+                        <li><strong>H. TOTALES</strong> &mdash; Total de horas en el período (válidas + no válidas).</li>
+                        <li><strong>SERV. PC</strong> &mdash; Servicios reconocidos por las mismas reglas que HORAS PC.</li>
                         <li><strong>HORAS PC</strong> &mdash; Horas válidas de Protección Civil contabilizadas para el requisito de 80 h. Un <code>~</code> indica ajuste manual.</li>
-                        <li><strong>H.PSICO</strong> &mdash; Horas de atención psicosocial.</li>
+                        <li><strong>SERV. PSICOSOCIAL / H. PSICOSOCIAL</strong> &mdash; Servicios y horas de atención psicosocial. El motivo 5.3 (Retén Romeo) se incluye automáticamente.</li>
                         <li><strong>RETÉN PC</strong> &mdash; Horas de retén en SAMUR.</li>
                         <li><strong>TRIMESTRAL</strong> &mdash; Días transcurridos desde el último servicio válido.</li>
                         <li><strong>RCP/AIT</strong> &mdash; Fecha del último reciclaje detectado (MM/AAAA) o <em>EXENTO</em> si antigüedad &lt; 3 años.</li>
@@ -320,7 +327,7 @@
         <div id="drop-overlay" class="drop-overlay hidden">
             <div class="drop-overlay-inner">
                 <span class="drop-icon">⤓</span>
-                <p id="drop-message">Suelta el archivo XLS para añadir voluntario</p>
+                <p id="drop-message">Suelta la carpeta o los archivos Excel</p>
             </div>
         </div>
 

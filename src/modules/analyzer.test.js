@@ -88,3 +88,43 @@ test('Retén Romeo (code 5.3) counts as psicosocial hours', () => {
 
     assert.equal(result.horasPsicosocial, 3);
 });
+
+test('counts total, PC, and Psicosocial services separately within the selected period', () => {
+    const year = new Date().getFullYear();
+    const service = (motivo, denominacion, horasFirmadas, overrides = {}) => ({
+        ...makeService({ date: `${year}-01-10`, motivo, denominacion, horasFirmadas }),
+        ...overrides,
+    });
+    const services = [
+        service('2.2', 'SERVICIO PC', 4),
+        service('5.3', 'ACOMPAÑAMIENTO', 3),
+        service('5,3 - Retén', 'GUARDIA', 2),
+        service('6.5', 'FORMACIÓN', 1),
+        service('4.2', 'ENTREVISTA', 2),
+        service('5.3', 'GUARDIA', 0, { horasProgramadas: 6 }),
+        service('5.31', 'OTRO MOTIVO', 1),
+        service('5.3', 'FUERA DEL PERIODO', 8, { fecha: new Date(year - 1, 0, 10) }),
+    ];
+    const volunteer = { nvol: '1', isJefatura: false, services };
+    const [signed] = analyzeData([volunteer], 'todo', 'anoActual', 'firmadas');
+    const [scheduled] = analyzeData([volunteer], 'todo', 'anoActual', 'programadas');
+
+    assert.deepEqual(
+        [signed.serviciosEnVentana, signed.serviciosPC, signed.serviciosPsicosocial],
+        [7, 2, 4],
+    );
+    assert.deepEqual(
+        [signed.horasTotalesTimeWindow, signed.horasValidasTimeWindow, signed.horasPsicosocial],
+        [13, 6, 7],
+    );
+    assert.deepEqual(
+        [scheduled.serviciosEnVentana, scheduled.serviciosPC, scheduled.serviciosPsicosocial],
+        [7, 2, 4],
+    );
+    assert.deepEqual(
+        [scheduled.horasTotalesTimeWindow, scheduled.horasValidasTimeWindow, scheduled.horasPsicosocial],
+        [19, 6, 13],
+    );
+    assert.equal(services[1].esPsicosocial, true);
+    assert.equal(services[6].esPsicosocial, false);
+});

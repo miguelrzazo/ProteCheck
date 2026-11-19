@@ -5,7 +5,7 @@ const STEPS = [
         title: '// bienvenido a ProteCheck',
         body: `<p>ProteCheck analiza los informes <strong>.xls</strong> exportados desde Apúntate y calcula el estado de cumplimiento de cada voluntario.</p>
                <p><strong>Privacidad garantizada:</strong> Todo el análisis se realiza <strong>100% de forma local</strong> en tu navegador. Ningún archivo ni dato se sube a internet.</p>
-               <p>Haz clic en <strong>📁 Seleccionar Carpeta</strong> y elige la carpeta que contiene los archivos. También puedes arrastrar un archivo <code>.xls</code> directamente sobre la ventana.</p>`,
+               <p>Haz clic en <strong>📁 Seleccionar Carpeta</strong> y elige la carpeta que contiene los archivos. También puedes elegir archivos individuales o arrastrar una carpeta o varios informes a la ventana.</p>`,
         btn: 'Siguiente →'
     },
     {

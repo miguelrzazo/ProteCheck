@@ -1,5 +1,6 @@
 import { inject } from '@vercel/analytics';
-import { processFolder, parseVolunteerFile } from './modules/parser.js';
+import { processFolder } from './modules/parser.js';
+import { filesFromDrop } from './modules/import-files.js';
 import { analyzeData } from './modules/analyzer.js';
 import { renderDashboard, setupSortHeaders, applySorting, getSortInfo } from './modules/dashboard.js';
 import { exportToXLSX, exportToCSV, exportToPDF } from './modules/exporter.js';
@@ -12,8 +13,8 @@ let currentData = [];
 let currentEstadoFilter = 'todo';
 let currentTimeFilter = 'anoActual';
 let currentHorasMode = 'firmadas';
-let currentDirectoryHandle = null;
-let currentFallbackFiles = null;
+let importing = false;
+let refreshingFolder = false;
 
 // ── Theme toggle ─────────────────────────────────────────
 const THEMES = ['dark', 'light', 'system'];
@@ -56,7 +57,26 @@ document.addEventListener('DOMContentLoaded', () => {
     if (verEl) verEl.textContent = `v${__APP_VERSION__}`;
 
     // Buttons
-    document.getElementById('btn-select-folder').addEventListener('click', handleSelectFolder);
+    const folderInput = document.getElementById('folder-input');
+    const filesInput = document.getElementById('files-input');
+    const selectFolder = (refresh) => {
+        refreshingFolder = refresh;
+        folderInput.click();
+    };
+    document.getElementById('btn-select-folder').addEventListener('click', () => selectFolder(false));
+    document.getElementById('btn-refresh').addEventListener('click', () => selectFolder(true));
+    document.getElementById('btn-select-files').addEventListener('click', () => filesInput.click());
+
+    folderInput.addEventListener('change', () => {
+        const files = Array.from(folderInput.files);
+        folderInput.value = '';
+        if (files.length) importReports(files, { folder: true, preserve: refreshingFolder });
+    });
+    filesInput.addEventListener('change', () => {
+        const files = Array.from(filesInput.files);
+        filesInput.value = '';
+        if (files.length) importReports(files);
+    });
     
     // Estado Filters
     const estadoBtns = document.querySelectorAll('.estado-btn');
@@ -106,9 +126,6 @@ document.addEventListener('DOMContentLoaded', () => {
         exportToPDF(getExportData(), currentHorasMode, currentTimeFilter, getSortInfo());
     });
     
-    // Refresh
-    document.getElementById('btn-refresh').addEventListener('click', handleRefresh);
-
     // Sort Headers
     setupSortHeaders(() => { updateDashboard() });
 
@@ -159,119 +176,9 @@ document.addEventListener('DOMContentLoaded', () => {
         updateDashboard();
     });
 
-    // Safari Fallback handling
-    document.getElementById('fallback-folder-input').addEventListener('change', async (e) => {
-        const files = Array.from(e.target.files);
-        if (!files || files.length === 0) return;
-        
-        currentFallbackFiles = files;
-        currentDirectoryHandle = null; // Clear primary API state
-        
-        document.getElementById('btn-refresh').classList.remove('hidden');
-        document.getElementById('dashboard').classList.add('hidden');
-        document.getElementById('loader').classList.remove('hidden');
-        
-        setTimeout(async () => {
-            currentData = await processFolder(currentFallbackFiles);
-            
-            document.getElementById('loader').classList.add('hidden');
-            
-            if (currentData.length === 0) {
-                alert('No se encontraron archivos .xls o .xlsx válidos en la carpeta seleccionada.');
-                return;
-            }
-            
-            updateDashboard();
-        }, 100);
-    });
-
     // First-run onboarding
     initOnboarding();
 });
-
-async function handleSelectFolder() {
-    if (window.showDirectoryPicker) {
-        try {
-            const directoryHandle = await window.showDirectoryPicker({
-                mode: 'read'
-            });
-            
-            if (directoryHandle) {
-                currentDirectoryHandle = directoryHandle;
-                currentFallbackFiles = null; // Clear fallback state
-                
-                document.getElementById('btn-refresh').classList.remove('hidden');
-                document.getElementById('dashboard').classList.add('hidden');
-                document.getElementById('loader').classList.remove('hidden');
-                
-                // Allow UI to update
-                setTimeout(async () => {
-                    currentData = await processFolder(directoryHandle);
-                    
-                    document.getElementById('loader').classList.add('hidden');
-                    
-                    if (currentData.length === 0) {
-                        alert('No se encontraron archivos .xls o .xlsx válidos en la carpeta seleccionada.');
-                        return;
-                    }
-                    
-                    updateDashboard();
-                }, 100);
-            }
-        } catch(e) {
-            if (e.name !== 'AbortError') {
-                console.error(e);
-                alert('Error al seleccionar la carpeta. Usando método alternativo...');
-                document.getElementById('fallback-folder-input').click();
-            }
-            document.getElementById('loader').classList.add('hidden');
-        }
-    } else {
-        // Fallback for Safari/Firefox
-        document.getElementById('fallback-folder-input').click();
-    }
-}
-
-async function handleRefresh() {
-    if (!currentDirectoryHandle && !currentFallbackFiles) return;
-    
-    // Guardar estados manuales actuales
-    const manualStates = currentData.map(v => ({
-        nvol: v.nvol,
-        isJefatura: v.isJefatura,
-        psicoOverrides: v.services.filter(s => s.forcePsicosocial).map(s => `${s.fechaStr}|${s.motivo}|${s.denominacion}`)
-    }));
-
-    document.getElementById('loader').classList.remove('hidden');
-    
-    try {
-        // Volver a procesar la carpeta
-        const dataSource = currentDirectoryHandle ? currentDirectoryHandle : currentFallbackFiles;
-        const newData = await processFolder(dataSource);
-        
-        // Re-aplicar estados manuales
-        newData.forEach(v => {
-            const state = manualStates.find(ms => ms.nvol === v.nvol);
-            if (state) {
-                v.isJefatura = state.isJefatura;
-                v.services.forEach(s => {
-                    const key = `${s.fechaStr}|${s.motivo}|${s.denominacion}`;
-                    if (state.psicoOverrides.includes(key)) {
-                        s.forcePsicosocial = true;
-                    }
-                });
-            }
-        });
-
-        currentData = newData;
-        updateDashboard();
-    } catch(e) {
-        console.error(e);
-        alert('Error al refrescar la carpeta.');
-    } finally {
-        document.getElementById('loader').classList.add('hidden');
-    }
-}
 
 function updateDashboard() {
     const analyzed = analyzeData(currentData, currentEstadoFilter, currentTimeFilter, currentHorasMode);
@@ -280,13 +187,8 @@ function updateDashboard() {
 
 // ── Drag-drop ─────────────────────────────────────────────
 
-function showDropOverlay(warn = false, message = 'Suelta el archivo XLS para añadir voluntario') {
+function showDropOverlay() {
     const overlay = document.getElementById('drop-overlay');
-    const inner   = overlay.querySelector('.drop-overlay-inner');
-    const icon    = overlay.querySelector('.drop-icon');
-    document.getElementById('drop-message').textContent = message;
-    inner.classList.toggle('warn', warn);
-    icon.textContent = warn ? '⚠' : '⤓';
     overlay.classList.remove('hidden');
 }
 
@@ -321,48 +223,51 @@ function mergeVolunteerState(existing, fresh) {
     return fresh;
 }
 
-async function handleDroppedFiles(files) {
-    const xlsFiles = Array.from(files).filter(f => /\.(xls|xlsx)$/i.test(f.name));
-    if (!xlsFiles.length) {
-        showToast('⚠ Solo se admiten archivos .xls o .xlsx');
+async function importReports(source, { folder = false, preserve = true } = {}) {
+    if (importing) {
+        showToast('Espera a que termine la importación en curso.');
         return;
     }
 
-    if (!currentDirectoryHandle && !currentFallbackFiles) {
-        showToast('⚠ Selecciona una carpeta primero antes de añadir archivos');
-        return;
-    }
+    const loader = document.getElementById('loader');
+    importing = true;
+    loader.classList.remove('hidden');
+    try {
+        const reports = await processFolder(await source);
+        if (!reports.length) {
+            showToast('No se encontraron informes .xls o .xlsx válidos.');
+            return;
+        }
 
-    document.getElementById('loader').classList.remove('hidden');
-
-    let added = 0, updated = 0;
-    for (const file of xlsFiles) {
-        try {
-            // Parse the newly dropped file
-            const fresh = await parseVolunteerFile(file);
-
-            // Merge into currentData
-            const existingIdx = currentData.findIndex(v => v.nvol === fresh.nvol);
-            if (existingIdx >= 0) {
-                currentData[existingIdx] = mergeVolunteerState(currentData[existingIdx], fresh);
+        const existing = new Map(currentData.map(report => [report.nvol, report]));
+        const imported = folder ? new Map() : existing;
+        let added = 0;
+        let updated = 0;
+        for (const fresh of reports) {
+            const previous = imported.get(fresh.nvol) || (preserve && existing.get(fresh.nvol));
+            if (previous) {
+                mergeVolunteerState(previous, fresh);
                 updated++;
             } else {
-                currentData.push(fresh);
                 added++;
             }
-        } catch (e) {
-            console.error('Error processing dropped file', e);
+            imported.set(fresh.nvol, fresh);
         }
-    }
+        currentData = [...imported.values()];
+        if (folder) document.getElementById('btn-refresh').classList.remove('hidden');
+        updateDashboard();
 
-    document.getElementById('loader').classList.add('hidden');
-    if (added + updated > 0) updateDashboard();
-
-    const msg = [added && `${added} voluntario${added > 1 ? 's' : ''} añadido${added > 1 ? 's' : ''}`,
-                 updated && `${updated} actualizado${updated > 1 ? 's' : ''}`]
-        .filter(Boolean).join(', ');
-    if (msg) {
-        showToast(`✓ ${msg}`);
+        const message = [
+            added && `${added} voluntario${added > 1 ? 's' : ''} añadido${added > 1 ? 's' : ''}`,
+            updated && `${updated} actualizado${updated > 1 ? 's' : ''}`,
+        ].filter(Boolean).join(', ');
+        showToast(`✓ ${message}`);
+    } catch (error) {
+        console.error('Error al importar informes', error);
+        showToast('No se pudieron leer los archivos seleccionados.');
+    } finally {
+        importing = false;
+        loader.classList.add('hidden');
     }
 }
 
@@ -372,7 +277,7 @@ function setupDragDrop() {
         event.stopPropagation();
         
         if (event.dataTransfer.types.includes('Files')) {
-            showDropOverlay(false, 'Suelta el archivo XLS para añadir voluntario');
+            showDropOverlay();
         }
     });
 
@@ -394,9 +299,8 @@ function setupDragDrop() {
         event.stopPropagation();
 
         hideDropOverlay();
-        const files = event.dataTransfer.files;
-        if (files && files.length > 0) {
-            handleDroppedFiles(files);
+        if (event.dataTransfer.types.includes('Files') && !importing) {
+            importReports(filesFromDrop(event.dataTransfer));
         }
     });
 }

@@ -5,9 +5,9 @@ import { format } from 'date-fns';
 
 // ── Shared helpers ────────────────────────────────────────
 const SORT_LABELS = {
-    nvol: 'NVOL', antiguedadYears: 'ANTIGÜEDAD', serviciosEnVentana: 'SERVICIOS',
-    horasTotalesTimeWindow: 'H.TOT', horasValidasTimeWindow: 'HORAS PC',
-    horasPsicosocial: 'H.PSICO', horasRetenPC: 'RETÉN PC',
+    nvol: 'NVOL', antiguedadYears: 'ANTIGÜEDAD', serviciosEnVentana: 'SERV. TOTALES',
+    horasTotalesTimeWindow: 'H. TOTALES', serviciosPC: 'SERV. PC', horasValidasTimeWindow: 'HORAS PC',
+    serviciosPsicosocial: 'SERV. PSICOSOCIAL', horasPsicosocial: 'H. PSICOSOCIAL', horasRetenPC: 'RETÉN PC',
 };
 
 const TIME_LABELS = {
@@ -34,8 +34,8 @@ function buildRows(data, horasMode) {
     const hLabel = `Horas PC (${horasMode === 'programadas' ? 'Prog.' : 'Firm.'})`;
     return {
         headers: [
-            'NVOL', 'Antigüedad', 'Servicios', 'H. Totales',
-            hLabel, 'H. Psico', 'Retén PC',
+            'NVOL', 'Antigüedad', 'Servicios totales', 'H. Totales',
+            'Servicios PC', hLabel, 'Servicios Psicosocial', 'H. Psicosocial', 'Retén PC',
             'Cumple 80h', 'Días sin servicio', 'Cumple 90d', 'RCP/AIT', 'ESTADO',
         ],
         rows: data.map(v => [
@@ -43,7 +43,9 @@ function buildRows(data, horasMode) {
             `${v.antiguedadYears.toFixed(1)}a`,
             v.serviciosEnVentana,
             v.horasTotalesTimeWindow.toFixed(1),
+            v.serviciosPC,
             v.horasValidasTimeWindow.toFixed(1),
+            v.serviciosPsicosocial,
             v.horasPsicosocial.toFixed(1),
             v.horasRetenPC.toFixed(1),
             v.cumple80Horas ? 'Sí' : 'No',
@@ -82,7 +84,7 @@ export async function exportToXLSX(data, horasMode = 'firmadas', timeFilter = 'a
     });
 
     // Column widths
-    ws['!cols'] = [8, 10, 9, 10, 12, 9, 9, 10, 14, 10, 8, 9].map(w => ({ wch: w }));
+    ws['!cols'] = [8, 10, 16, 11, 13, 16, 22, 16, 9, 10, 16, 10, 8, 9].map(w => ({ wch: w }));
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Cumplimiento');
@@ -209,14 +211,16 @@ export async function exportToPDF(data, horasMode = 'firmadas', timeFilter = 'an
     // ── Table ──────────────────────────────────────────────
     const hLabel = `HORAS PC\n(${horasMode === 'programadas' ? 'PROG' : 'FIRM'})`;
     const tableHead = [
-        ['NVOL', 'ANTIGÜEDAD', 'SERV', 'H.TOT', hLabel, 'H.PSICO', 'RETÉN', '80H', 'DÍAS', '90D', 'RCP', 'ESTADO'],
+        ['NVOL', 'ANTIGÜEDAD', 'SERV. TOT', 'H.TOT', 'SERV. PC', hLabel, 'SERV. PSICO', 'H.PSICO', 'RETÉN', '80H', 'DÍAS', '90D', 'RCP', 'ESTADO'],
     ];
     const tableBody = data.map(v => [
         nvol(v),
         `${v.antiguedadYears.toFixed(1)}a`,
         v.serviciosEnVentana,
         `${v.horasTotalesTimeWindow.toFixed(1)}h`,
+        v.serviciosPC,
         `${v.horasValidasTimeWindow.toFixed(1)}h`,
+        v.serviciosPsicosocial,
         `${v.horasPsicosocial.toFixed(1)}h`,
         `${v.horasRetenPC.toFixed(1)}h`,
         v.cumple80Horas ? 'SÍ' : 'NO',
@@ -257,27 +261,29 @@ export async function exportToPDF(data, horasMode = 'firmadas', timeFilter = 'an
         columnStyles: {
             0:  { halign: 'left',   cellWidth: 18 },  // NVOL
             1:  { halign: 'center', cellWidth: 18 },  // Antigüedad
-            2:  { halign: 'center', cellWidth: 12 },  // Servicios
+            2:  { halign: 'center', cellWidth: 19 },  // Servicios totales
             3:  { halign: 'center', cellWidth: 16 },  // H.Tot
-            4:  { halign: 'center', cellWidth: 20 },  // Horas PC
-            5:  { halign: 'center', cellWidth: 16 },  // H.Psico
-            6:  { halign: 'center', cellWidth: 14 },  // Retén
-            7:  { halign: 'center', cellWidth: 12 },  // 80h
-            8:  { halign: 'center', cellWidth: 14 },  // Días
-            9:  { halign: 'center', cellWidth: 12 },  // 90d
-            10: { halign: 'center', cellWidth: 12 },  // RCP
-            11: { halign: 'center', cellWidth: 22 },  // Estado
+            4:  { halign: 'center', cellWidth: 18 },  // Servicios PC
+            5:  { halign: 'center', cellWidth: 20 },  // Horas PC
+            6:  { halign: 'center', cellWidth: 23 },  // Servicios Psicosocial
+            7:  { halign: 'center', cellWidth: 16 },  // H.Psico
+            8:  { halign: 'center', cellWidth: 14 },  // Retén
+            9:  { halign: 'center', cellWidth: 12 },  // 80h
+            10: { halign: 'center', cellWidth: 14 },  // Días
+            11: { halign: 'center', cellWidth: 12 },  // 90d
+            12: { halign: 'center', cellWidth: 12 },  // RCP
+            13: { halign: 'center', cellWidth: 22 },  // Estado
         },
         didParseCell(hook) {
             const { section, column, cell } = hook;
             if (section !== 'body') return;
             // Colour 80h and 90d NO cells
-            if ((column.index === 7 || column.index === 9) && cell.raw === 'NO') {
+            if ((column.index === 9 || column.index === 11) && cell.raw === 'NO') {
                 cell.styles.textColor = C_PELIGRO;
                 cell.styles.fontStyle = 'bold';
             }
             // Colour ESTADO column
-            if (column.index === 11) {
+            if (column.index === 13) {
                 if (cell.raw === 'APTO')    { cell.styles.textColor = C_APTO;    cell.styles.fontStyle = 'bold'; }
                 if (cell.raw === 'ALERTA')  { cell.styles.textColor = C_ALERTA;  cell.styles.fontStyle = 'bold'; }
                 if (cell.raw === 'PELIGRO') { cell.styles.textColor = C_PELIGRO; cell.styles.fontStyle = 'bold'; }
